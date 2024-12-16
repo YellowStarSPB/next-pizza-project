@@ -1,43 +1,28 @@
 'use client';
-import React, { useEffect, useState } from 'react';
-import { CheckboxFiltersGroup, FilterCheckbox, Title } from '.';
+import React from 'react';
+import { CheckboxFiltersGroup, Title } from '.';
 import { Input, RangeSlider } from '../ui';
-import { useFilterIngredients } from '@/hooks/useFilterIngredients';
-import { useSet } from 'react-use';
+import { useQueryFilters, useFilters, useIngredients } from '@/hooks';
 
 interface IFiltersProps {
 	className?: string;
 }
 
-interface IPrice {
-	priceFrom: number;
-	priceTo: number;
-}
-
 export const Filters = ({ className }: IFiltersProps): JSX.Element => {
-	const { ingredients, loading, selectedIngredients, onAddId } = useFilterIngredients();
-	const [sizes, { toggle: toggleSizes }] = useSet<string>(new Set([]));
-	const [pizzaTypes, { toggle: togglePizzaTypes }] = useSet<string>(new Set([]));
-	const [prices, setPrice] = useState<IPrice>({
-		priceFrom: 0,
-		priceTo: 1000
-	});
+	const { ingredients, loading } = useIngredients();
+	const filters = useFilters();
+
+	useQueryFilters(filters);
 
 	const preparedIngredients = ingredients.map((ingredient) => ({
 		text: ingredient.name,
 		value: String(ingredient.id)
 	}));
 
-	const updatePrice = (name: keyof IPrice, value: number) => {
-		if (value > 1000) return;
-		setPrice({
-			...prices,
-			[name]: value
-		});
+	const updatePrices = (prices: number[]) => {
+		filters.setPrices('priceFrom', prices[0]);
+		filters.setPrices('priceTo', prices[1]);
 	};
-  useEffect(() => {
-    console.log(selectedIngredients,sizes,prices,pizzaTypes)
-  },[selectedIngredients,sizes,prices,pizzaTypes])
 
 	return (
 		<div className={className}>
@@ -47,8 +32,8 @@ export const Filters = ({ className }: IFiltersProps): JSX.Element => {
 				title="Тип теста"
 				name="pizzaTypes"
 				className="mb-5"
-				onClickCheckbox={togglePizzaTypes}
-				selected={pizzaTypes}
+				onClickCheckbox={filters.setPizzaTypes}
+				selected={filters.pizzaTypes}
 				items={[
 					{ text: 'Тонкое', value: '1' },
 					{ text: 'Традиционное', value: '2' }
@@ -64,8 +49,8 @@ export const Filters = ({ className }: IFiltersProps): JSX.Element => {
 					{ text: '30 см', value: '30' },
 					{ text: '40 см', value: '40' }
 				]}
-				selected={sizes}
-				onClickCheckbox={toggleSizes}
+				selected={filters.sizes}
+				onClickCheckbox={filters.setSizes}
 			/>
 
 			{/* фильтр цены */}
@@ -77,24 +62,24 @@ export const Filters = ({ className }: IFiltersProps): JSX.Element => {
 						placeholder="0"
 						min={0}
 						max={1000}
-						value={String(prices.priceFrom)}
-						onChange={(e) => updatePrice('priceFrom', Number(e.target.value))}
+						value={String(filters.prices.priceFrom)}
+						onChange={(e) => filters.setPrices('priceFrom', Number(e.target.value))}
 					/>
 					<Input
 						type="number"
 						min={100}
 						max={1000}
 						placeholder="1000"
-						value={String(prices.priceTo)}
-						onChange={(e) => updatePrice('priceTo', Number(e.target.value))}
+						value={String(filters.prices.priceTo)}
+						onChange={(e) => filters.setPrices('priceTo', Number(e.target.value))}
 					/>
 				</div>
 				<RangeSlider
 					min={0}
 					max={1000}
 					step={10}
-					value={[prices.priceFrom, prices.priceTo]}
-					onValueChange={([priceFrom, priceTo]) => setPrice({ priceFrom, priceTo })}
+					value={[filters.prices.priceFrom || 0, filters.prices.priceTo || 1000]}
+					onValueChange={updatePrices}
 				/>
 			</div>
 
@@ -106,8 +91,8 @@ export const Filters = ({ className }: IFiltersProps): JSX.Element => {
 				loading={loading}
 				defaultItems={preparedIngredients.slice(0, 6)}
 				items={preparedIngredients}
-				onClickCheckbox={onAddId}
-				selected={selectedIngredients}
+				onClickCheckbox={filters.setSelectedIngredients}
+				selected={filters.selectedIngredients}
 			/>
 		</div>
 	);
