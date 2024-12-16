@@ -1,0 +1,30 @@
+version: '3.8'
+services:
+  postgres:
+    image: postgres
+    container_name: next-pizza-db
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: pizzatest
+      POSTGRES_DB: next-pizza
+    ports:
+      - '5432:5432'
+    volumes:
+      - next-pizza-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+  adminer:
+    image: adminer
+    restart: always
+    container_name: adminer
+    ports:
+      - '8888:8080'
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  next-pizza-data:
